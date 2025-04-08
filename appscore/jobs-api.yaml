@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jobs-api
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: jobs-api
+  template:
+    metadata:
+      labels:
+        app: jobs-api
+    spec:
+      containers:
+      - name: jobs-api
+        image: laeticia640/jobs.api:latest
+        ports:
+        - containerPort: 80
+        env:
+        - name: ConnectionString
+          value: "Server=mssql-linux;User=sa;Password=Pass@word;Database=dotnetgigs.jobs;"
+        - name: HostRabbitmq
+          value: "rabbitmq"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: jobs-api
+spec:
+  selector:
+    app: jobs-api
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+  type: ClusterIP

@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: identity-api
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: identity-api
+  template:
+    metadata:
+      labels:
+        app: identity-api
+    spec:
+      containers:
+      - name: identity-api
+        image: laeticia640/identity.api:latest
+        ports:
+        - containerPort: 80
+        env:
+        - name: RedisHost
+          value: "user-data:6379"
+        - name: HostRabbitmq
+          value: "rabbitmq"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: identity-api
+spec:
+  selector:
+    app: identity-api
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+  type: ClusterIP
