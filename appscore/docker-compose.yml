@@ -2,9 +2,10 @@ version: '3'
 
 services:
   user.data:
-    image: redis
+    image: redis:latest
     ports:
       - 6379:6379
+    restart: always
 
   rabbitmq:
     image: rabbitmq:3-management
@@ -12,13 +13,13 @@ services:
       - 15672:15672
       - 5672:5672
     container_name: rabbitmq
-    
+
   webmvc:
-    image: web 
+    image: web:latest
     build:
       context: ./
       dockerfile: Web/Dockerfile
-    ports: 
+    ports:
     - 8080:80
     container_name: web
     depends_on:
@@ -28,14 +29,14 @@ services:
     restart: always
 
   applicants.api:
-    image: applicants.api
+    image: applicants.api:latest
     environment:
       - ConnectionString=Server=sql.data;User=sa;Password=Pass@word;Database=dotnetgigs.applicants;
       - HostRabbitmq=rabbitmq
     build:
       context: ./
       dockerfile: Services/Applicants.Api/Dockerfile
-    ports: 
+    ports:
     - 8081:80
     container_name: applicants.api
     depends_on:
@@ -44,14 +45,14 @@ services:
     restart: always
 
   jobs_api:
-    image: jobs.api
+    image: jobs.api:latest
     environment:
       - ConnectionString=Server=sql.data;User=sa;Password=Pass@word;Database=dotnetgigs.jobs;
-      - HostRabbitmq=rabbitmq 
+      - HostRabbitmq=rabbitmq
     build:
       context: ./
       dockerfile: Services/Jobs.Api/Dockerfile
-    ports: 
+    ports:
     - 8083:80
     container_name: jobs_api
     depends_on:
@@ -60,25 +61,32 @@ services:
     restart: always
 
   identity_api:
-    image: identity.api
+    image: identity.api:latest
     environment:
       - RedisHost=user.data:6379
       - HostRabbitmq=rabbitmq
     build:
       context: ./
       dockerfile: Services/Identity.Api/Dockerfile
-    ports: 
+    ports:
     - 8084:80
     container_name: identity_api
     depends_on:
       - user.data
-      - rabbitmq       
+      - rabbitmq
+    restart: on-failure
 
   sql.data:
-    image: mssql-linux
+    image: mssql-linux:latest
     build:
       context: ./Database
       dockerfile: Dockerfile
     ports:
       - 1433:1433
     container_name: mssql-linux
+    healthcheck:
+      test: /opt/mssql-tools/bin/sqlcmd -U sa -P "Pass@word" -Q "SELECT 1"
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    restart: always
